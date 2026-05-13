@@ -364,10 +364,9 @@ table.board th {
   font-weight: 600;
   letter-spacing: 0.14em;
   color: var(--text-faint);
-  padding: 10px 14px;
+  padding: 14px 14px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-elev);
-  position: sticky; top: 56px;
 }
 table.board th.col-num { text-align: right; }
 table.board th.col-rank { width: 80px; padding-left: 20px; }
