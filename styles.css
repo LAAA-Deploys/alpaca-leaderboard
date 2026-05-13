@@ -374,10 +374,11 @@ table.board th.col-rank { width: 80px; padding-left: 20px; }
 table.board th.col-caret { width: 30px; }
 
 table.board td {
-  padding: 14px;
+  padding: 20px 14px;
   border-bottom: 1px solid var(--border-soft);
   vertical-align: middle;
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1.3;
 }
 table.board tr.row { cursor: pointer; transition: background 120ms; }
 table.board tr.row:hover { background: var(--bg-row-hov); }
@@ -392,8 +393,9 @@ table.board tr.detail-row > td { padding: 0; background: var(--bg-row-open); bor
   padding-left: 20px;
   color: var(--text);
   letter-spacing: -0.01em;
-  line-height: 1;
+  line-height: 1.3;
   white-space: nowrap;
+  vertical-align: middle;
 }
 .col-rank-cell .rank-hash {
   color: var(--text-faint);
@@ -412,6 +414,7 @@ table.board tr.detail-row > td { padding: 0; background: var(--bg-row-open); bor
 .handle-cell {
   font-weight: 600;
   color: var(--text);
+  font-size: 16px;
   display: flex; align-items: center; gap: 8px;
 }
 .handle-cell .me-pill {
