@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0a0e14" />
+  <title>Alpaca Trading Competition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand">
+        <span class="brand-mark">&#9650;</span>
+        <span class="brand-name">ALPACA<span class="brand-dim"> TRADING COMPETITION</span></span>
+      </div>
+      <div class="status">
+        <button class="cta cta-sm" id="cta-connect-top" type="button">CONNECT ACCOUNT</button>
+        <span class="live-dot" id="live-dot"></span>
+        <span class="live-label" id="live-label">CONNECTING</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>Who&rsquo;s the next Jim Simons?</h1>
+      <p class="sub">
+        Six friends. $100,000 of fake money each. Real Alpaca paper accounts.
+        Trade however you want. Ranked by ROI. Updated every market day.
+      </p>
+    </section>
+
+    <section class="card stats" id="stats" aria-label="Comp stats">
+      <div class="stat">
+        <div class="stat-label">PLAYERS</div>
+        <div class="stat-value" id="stat-players">&mdash;</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">DAYS LIVE</div>
+        <div class="stat-value" id="stat-days">&mdash;</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">TOP ROI</div>
+        <div class="stat-value" id="stat-top-roi">&mdash;</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">SPREAD</div>
+        <div class="stat-value" id="stat-spread">&mdash;</div>
+      </div>
+    </section>
+
+    <section class="champion" id="champion">
+      <div class="champion-frame">
+        <img src="images/king.png" alt="Reigning Champion" />
+      </div>
+      <div class="champion-meta">
+        <div class="champion-label">REIGNING CHAMPION</div>
+        <div class="champion-name" id="champion-name">&mdash;</div>
+        <div class="champion-roi" id="champion-roi">&nbsp;</div>
+      </div>
+    </section>
+
+    <section class="card board-card">
+      <div class="board-head">
+        <h2>LEADERBOARD</h2>
+        <div class="board-meta">
+          <span id="last-refresh">--</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="board" id="board">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-handle">HANDLE</th>
+              <th class="col-num">EQUITY</th>
+              <th class="col-num">P&amp;L</th>
+              <th class="col-num">ROI%</th>
+              <th class="col-num hide-sm">DAY P&amp;L</th>
+              <th class="col-num hide-sm">POS</th>
+              <th class="col-num hide-md">UPDATED</th>
+              <th class="col-caret"></th>
+            </tr>
+          </thead>
+          <tbody id="board-body">
+            <tr><td colspan="9" class="empty">Loading&hellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card how">
+      <h2>HOW IT WORKS</h2>
+      <ol>
+        <li>Each player has their own Alpaca paper-trading account, starting at $100,000.</li>
+        <li>Trade equities only &mdash; no margin, no options (yet).</li>
+        <li>Every market day after close, each player's machine posts a snapshot (equity, cash, positions) to this leaderboard.</li>
+        <li>API keys never leave your machine. The leaderboard only ever sees the final numbers.</li>
+        <li>Ranked by total ROI %. Click a row to see that player's positions and equity curve.</li>
+      </ol>
+    </section>
+
+    <section class="join-cta">
+      <h2>Think you can beat them?</h2>
+      <p>Connect your Alpaca paper account and join the leaderboard. Takes 30 seconds.</p>
+      <div class="join-cta-row">
+        <button class="cta cta-lg" id="cta-connect-hero" type="button">
+          <span class="cta-mark">&#9650;</span> Connect Your Alpaca Account
+        </button>
+        <a class="cta-secondary" href="https://app.alpaca.markets/signup" target="_blank" rel="noopener">
+          No account yet? Sign up for Alpaca &rsaquo;
+        </a>
+      </div>
+    </section>
+
+    <div class="modal-backdrop" id="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+        <div class="modal-head">
+          <div class="modal-eyebrow">JOIN THE COMPETITION</div>
+          <h2 id="modal-title">Connect your Alpaca paper account</h2>
+          <p class="modal-sub">
+            We&rsquo;ll pull your paper-trading equity and positions every market day.
+            Keys are stored encrypted on the server and only used to read your account.
+          </p>
+        </div>
+
+        <form id="connect-form" class="modal-form" novalidate>
+          <label class="field">
+            <span class="field-label">Display name <span class="req">*</span></span>
+            <input id="f-handle" name="handle" type="text" maxlength="32" required
+                   autocomplete="off" placeholder="e.g. Filip" />
+            <span class="field-hint">Shown on the leaderboard. 1&ndash;32 characters.</span>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Alpaca paper API key <span class="req">*</span></span>
+            <input id="f-key" name="api_key" type="text" required spellcheck="false"
+                   autocomplete="off" placeholder="PK&hellip;" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Alpaca paper secret key <span class="req">*</span></span>
+            <input id="f-secret" name="secret_key" type="password" required spellcheck="false"
+                   autocomplete="off" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" />
+            <span class="field-hint">
+              Get yours at
+              <a href="https://app.alpaca.markets/paper/dashboard/overview" target="_blank" rel="noopener">
+                alpaca.markets &rarr; Paper Trading &rarr; View API Keys
+              </a>.
+            </span>
+          </label>
+
+          <div class="form-msg" id="form-msg" hidden></div>
+
+          <div class="modal-actions">
+            <button class="cta cta-ghost" id="modal-cancel" type="button">Cancel</button>
+            <button class="cta cta-primary" id="modal-submit" type="submit">
+              <span class="btn-label">Connect Account</span>
+              <span class="btn-spin" hidden></span>
+            </button>
+          </div>
+        </form>
+
+        <div class="modal-success" id="modal-success" hidden>
+          <div class="check">&#10003;</div>
+          <h3 id="success-title">You&rsquo;re in!</h3>
+          <p id="success-msg">Your first snapshot is being processed. Watch the leaderboard.</p>
+          <button class="cta cta-primary" id="success-done" type="button">Show me the board</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <span>v1.0</span>
+      <span class="sep">&middot;</span>
+      <span>Paper money only &mdash; nothing here is real</span>
+      <span class="sep">&middot;</span>
+      <span id="footer-status">offline</span>
+    </footer>
+  </main>
+</body>
+</html>
