@@ -81,12 +81,13 @@ const fmtTs = (iso) => {
   if (!iso) return "—";
   return new Date(iso).toLocaleString();
 };
-// Server normalizes handles to "Capitalize" style. Mirror it defensively on the client
-// so any legacy/odd-case handle still renders uniformly.
+// Server title-cases handles. Mirror it defensively on the client so any
+// legacy/odd-case handle still renders uniformly ("john doe" -> "John Doe").
 const fmtHandle = (s) => {
   if (!s) return "";
-  const t = String(s).trim();
-  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+  return String(s).trim().split(/\s+/)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
 };
 
 /* ============================================================
