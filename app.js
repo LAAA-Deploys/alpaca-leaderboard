@@ -81,6 +81,13 @@ const fmtTs = (iso) => {
   if (!iso) return "—";
   return new Date(iso).toLocaleString();
 };
+// Server normalizes handles to "Capitalize" style. Mirror it defensively on the client
+// so any legacy/odd-case handle still renders uniformly.
+const fmtHandle = (s) => {
+  if (!s) return "";
+  const t = String(s).trim();
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+};
 
 /* ============================================================
    Render
@@ -129,7 +136,7 @@ function renderChampion(board) {
   }
   // board is already sorted descending by roi_pct upstream
   const leader = live[0];
-  nameEl.textContent = leader.handle;
+  nameEl.textContent = fmtHandle(leader.handle);
   roiEl.textContent = `${pct(leader.roi_pct)} · ${usd(leader.equity)}`;
   roiEl.classList.toggle("pos", leader.roi_pct >= 0);
   roiEl.classList.toggle("neg", leader.roi_pct < 0);
@@ -186,7 +193,7 @@ function renderBoard(board) {
     if (noData) {
       tr.innerHTML = `
         <td class="col-rank-cell muted">—</td>
-        <td class="handle-cell">${escapeHtml(p.handle)}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
+        <td class="handle-cell">${escapeHtml(fmtHandle(p.handle))}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
         <td colspan="6" class="num muted">no snapshot yet</td>
         <td class="col-caret-cell"></td>
       `;
@@ -199,7 +206,7 @@ function renderBoard(board) {
 
     tr.innerHTML = `
       <td class="col-rank-cell ${rankCls}"><span class="rank-hash">#</span>${rank}</td>
-      <td class="handle-cell">${escapeHtml(p.handle)}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
+      <td class="handle-cell">${escapeHtml(fmtHandle(p.handle))}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
       <td class="num">${usd(p.equity)}</td>
       <td class="num ${roiCls}">${usd(p.pnl, { sign: true })}</td>
       <td class="num ${roiCls}">${pct(p.roi_pct)}</td>
@@ -584,9 +591,10 @@ function startPolling() {
 }
 
 function onConnectSuccess(body) {
-  myHandle = body.handle;
-  localStorage.setItem(ME_HANDLE_KEY, body.handle);
-  $("#success-title").textContent = `Welcome, ${body.handle}!`;
+  const h = fmtHandle(body.handle);
+  myHandle = h;
+  localStorage.setItem(ME_HANDLE_KEY, h);
+  $("#success-title").textContent = `Welcome, ${h}!`;
   if (body.equity != null) {
     $("#success-msg").textContent =
       `Starting equity ${usd(body.equity)}. You'll appear on the leaderboard within a minute.`;
