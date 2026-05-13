@@ -373,11 +373,12 @@ table.board th.col-rank { width: 80px; padding-left: 20px; }
 table.board th.col-caret { width: 30px; }
 
 table.board td {
-  padding: 20px 14px;
+  padding: 18px 14px;
   border-bottom: 1px solid var(--border-soft);
   vertical-align: middle;
   font-size: 15px;
-  line-height: 1.3;
+  line-height: 1.4;
+  height: 64px;
 }
 table.board tr.row { cursor: pointer; transition: background 120ms; }
 table.board tr.row:hover { background: var(--bg-row-hov); }
@@ -386,13 +387,13 @@ table.board tr.detail-row > td { padding: 0; background: var(--bg-row-open); bor
 
 .col-rank-cell {
   font-family: var(--mono);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   text-align: left;
   padding-left: 20px;
   color: var(--text);
   letter-spacing: -0.01em;
-  line-height: 1.3;
+  line-height: 1.4;
   white-space: nowrap;
   vertical-align: middle;
 }
@@ -414,8 +415,10 @@ table.board tr.detail-row > td { padding: 0; background: var(--bg-row-open); bor
   font-weight: 600;
   color: var(--text);
   font-size: 16px;
-  display: flex; align-items: center; gap: 8px;
+  vertical-align: middle;
+  white-space: nowrap;
 }
+.handle-cell .me-pill { margin-left: 8px; vertical-align: middle; }
 .handle-cell .me-pill {
   font-family: var(--mono);
   font-size: 9.5px;
@@ -431,6 +434,8 @@ table.board tr.detail-row > td { padding: 0; background: var(--bg-row-open); bor
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
+  vertical-align: middle;
+  font-size: 15px;
 }
 .num.pos { color: var(--pos); }
 .num.neg { color: var(--neg); }
