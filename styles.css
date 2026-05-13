@@ -370,7 +370,7 @@ table.board th {
   position: sticky; top: 56px;
 }
 table.board th.col-num { text-align: right; }
-table.board th.col-rank { width: 60px; padding-left: 20px; }
+table.board th.col-rank { width: 80px; padding-left: 20px; }
 table.board th.col-caret { width: 30px; }
 
 table.board td {
@@ -386,15 +386,28 @@ table.board tr.detail-row > td { padding: 0; background: var(--bg-row-open); bor
 
 .col-rank-cell {
   font-family: var(--mono);
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 700;
   text-align: left;
   padding-left: 20px;
-  color: var(--text-dim);
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
 }
-.col-rank-cell.r1 { color: var(--rank-gold); }
+.col-rank-cell .rank-hash {
+  color: var(--text-faint);
+  font-weight: 500;
+  margin-right: 2px;
+  font-size: 0.75em;
+}
+.col-rank-cell.r1 { color: var(--rank-gold); text-shadow: 0 0 18px rgba(240, 198, 74, 0.35); }
+.col-rank-cell.r1 .rank-hash { color: rgba(240, 198, 74, 0.55); }
 .col-rank-cell.r2 { color: var(--rank-silver); }
+.col-rank-cell.r2 .rank-hash { color: rgba(194, 200, 209, 0.55); }
 .col-rank-cell.r3 { color: var(--rank-bronze); }
+.col-rank-cell.r3 .rank-hash { color: rgba(201, 138, 75, 0.55); }
+.col-rank-cell.muted { color: var(--text-faint); }
 
 .handle-cell {
   font-weight: 600;

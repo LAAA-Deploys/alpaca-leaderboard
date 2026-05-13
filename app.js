@@ -185,7 +185,7 @@ function renderBoard(board) {
 
     if (noData) {
       tr.innerHTML = `
-        <td class="col-rank-cell ${rankCls}">—</td>
+        <td class="col-rank-cell muted">—</td>
         <td class="handle-cell">${escapeHtml(p.handle)}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
         <td colspan="6" class="num muted">no snapshot yet</td>
         <td class="col-caret-cell"></td>
@@ -198,7 +198,7 @@ function renderBoard(board) {
     const dayCls = (p.day_pnl ?? 0) >= 0 ? "pos" : "neg";
 
     tr.innerHTML = `
-      <td class="col-rank-cell ${rankCls}">${rank}</td>
+      <td class="col-rank-cell ${rankCls}"><span class="rank-hash">#</span>${rank}</td>
       <td class="handle-cell">${escapeHtml(p.handle)}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
       <td class="num">${usd(p.equity)}</td>
       <td class="num ${roiCls}">${usd(p.pnl, { sign: true })}</td>
