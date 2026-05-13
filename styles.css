@@ -663,6 +663,102 @@ tr.row.open .col-caret-cell { transform: rotate(90deg); color: var(--accent); }
   margin-top: 6px;
 }
 
+/* code-display + prompt block (device-code flow) */
+.modal-stage[hidden] { display: none; }
+
+.code-display {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 10px;
+}
+.code-box {
+  flex: 1;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 16px 18px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  color: var(--accent);
+  box-shadow: 0 0 24px rgba(94, 231, 166, 0.18);
+  user-select: all;
+}
+.copy-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: color 120ms, border-color 120ms, background 120ms;
+  white-space: nowrap;
+}
+.copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+.copy-btn.copied { color: var(--pos); border-color: var(--pos); }
+.copy-icon { font-size: 14px; }
+.code-meta {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.code-meta strong { color: var(--text-dim); font-weight: 600; }
+.code-meta strong#code-countdown { color: var(--accent); }
+
+.prompt-block {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px 44px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.prompt-block pre {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.copy-btn-inline {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+}
+
+.waiting {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  background: rgba(94, 231, 166, 0.04);
+  border: 1px dashed rgba(94, 231, 166, 0.25);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.waiting-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.6s infinite;
+}
+.waiting-text { color: var(--text); }
+
 /* spinner */
 .btn-spin {
   display: inline-block;

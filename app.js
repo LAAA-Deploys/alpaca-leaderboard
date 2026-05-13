@@ -2,9 +2,12 @@
    Alpaca Paper Comp — leaderboard client
    ============================================================ */
 
+// Backend lives on the existing Lightsail box behind nginx + Let's Encrypt
+// at a sslip.io subdomain (no Glen DNS needed). Friends never see this URL
+// directly — it's hidden inside the Claude prompt the modal generates.
 const API_BASE = (() => {
   if (window.location.protocol === "file:") return null;
-  return window.location.origin;
+  return "https://32.194.248.231.nip.io";
 })();
 
 const REFRESH_MS = 60_000;
@@ -471,87 +474,185 @@ async function load() {
 }
 
 /* ============================================================
-   Connect Account modal
+   Connect Account modal — device-code flow
    ============================================================ */
+const STAGES = ["stage-handle", "stage-code", "stage-success"];
+const codeFlow = {
+  code: null,
+  handle: null,
+  expiresAt: null,
+  pollTimer: null,
+  countdownTimer: null,
+};
+
+function showStage(id) {
+  STAGES.forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.hidden = (s !== id);
+  });
+}
+
 function openModal() {
   resetModal();
   $("#modal-backdrop").hidden = false;
-  setTimeout(() => $("#f-handle")?.focus(), 80);
   document.body.style.overflow = "hidden";
+  setTimeout(() => $("#f-handle")?.focus(), 80);
 }
 function closeModal() {
   $("#modal-backdrop").hidden = true;
   document.body.style.overflow = "";
+  stopPolling();
 }
 function resetModal() {
-  $("#connect-form").hidden = false;
-  $("#modal-success").hidden = true;
+  showStage("stage-handle");
   $("#form-msg").hidden = true;
   $("#form-msg").className = "form-msg";
-  $("#connect-form").reset();
+  $("#code-msg").hidden = true;
+  $("#code-msg").className = "form-msg";
+  $("#connect-form")?.reset();
   setSubmitting(false);
+  stopPolling();
 }
 function setSubmitting(on) {
   const btn = $("#modal-submit");
+  if (!btn) return;
   const label = btn.querySelector(".btn-label");
   const spin = btn.querySelector(".btn-spin");
   btn.disabled = on;
-  label.hidden = on;
-  spin.hidden = !on;
+  if (label) label.hidden = on;
+  if (spin) spin.hidden = !on;
 }
-function showFormMsg(text, kind = "err") {
-  const el = $("#form-msg");
+function showFormMsg(text, kind = "err", target = "#form-msg") {
+  const el = $(target);
+  if (!el) return;
   el.textContent = text;
   el.className = `form-msg ${kind}`;
   el.hidden = false;
 }
 
-async function submitConnect(e) {
+function stopPolling() {
+  if (codeFlow.pollTimer) { clearInterval(codeFlow.pollTimer); codeFlow.pollTimer = null; }
+  if (codeFlow.countdownTimer) { clearInterval(codeFlow.countdownTimer); codeFlow.countdownTimer = null; }
+}
+
+function buildClaudePrompt(code) {
+  const url = API_BASE || "https://32.194.248.231.nip.io";
+  return `I want to join the Alpaca Trading Competition leaderboard.
+
+My one-time code is: ${code}
+
+Find my Alpaca *paper* API key + secret. Try in this order:
+  1. Env vars: $ALPACA_API_KEY and $ALPACA_SECRET_KEY
+  2. ~/.env or similar dotenv files in my home dir
+  3. ~/.alpaca/credentials
+  4. Ask me if you can't find them
+
+The paper API key starts with "PK" (NOT "AK" — never use a live key here).
+
+Then run this curl, substituting my real key + secret:
+
+  curl -X POST ${url}/api/code/claim \\
+    -H "Content-Type: application/json" \\
+    -d '{"code":"${code}","api_key":"<MY_KEY>","secret_key":"<MY_SECRET>"}'
+
+Report back what the server returns. On success the JSON has "ok":true and my equity.`;
+}
+
+async function submitHandle(e) {
   e.preventDefault();
   const handle = $("#f-handle").value.trim();
-  const api_key = $("#f-key").value.trim();
-  const secret_key = $("#f-secret").value.trim();
-
   if (!handle || handle.length > 32) {
-    showFormMsg("Display name must be 1–32 characters."); return;
+    showFormMsg("Display name must be 1–32 characters.");
+    return;
   }
-  if (!api_key || !secret_key) {
-    showFormMsg("Both API key and secret key are required."); return;
-  }
-  if (!/^PK[A-Z0-9]+$/i.test(api_key)) {
-    showFormMsg("That doesn't look like an Alpaca paper API key (should start with 'PK')."); return;
+  if (!/^[A-Za-z0-9 _.\-]+$/.test(handle)) {
+    showFormMsg("Letters, digits, space, underscore, dot, dash only.");
+    return;
   }
 
   setSubmitting(true);
   $("#form-msg").hidden = true;
 
-  // Preview mode (file://): simulate success
+  // file:// preview mode: fake a code, auto-claim after 6s
   if (!API_BASE) {
-    await new Promise(r => setTimeout(r, 700));
+    await new Promise(r => setTimeout(r, 500));
     setSubmitting(false);
-    onConnectSuccess({ handle, equity: 100000 });
+    const fakeCode = "K8M-J3P";
+    const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
+    enterCodeStage({ code: fakeCode, handle, expires_at: expiresAt });
+    setTimeout(() => onConnectSuccess({ handle, equity: 100000 }), 6000);
     return;
   }
 
   try {
-    const r = await fetch(`${API_BASE}/api/connect`, {
+    const r = await fetch(`${API_BASE}/api/code/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ handle, api_key, secret_key })
+      body: JSON.stringify({ handle }),
     });
     const body = await r.json().catch(() => ({}));
     if (!r.ok) {
-      const msg = body.detail || `Connection failed (HTTP ${r.status})`;
-      showFormMsg(msg);
+      showFormMsg(body.detail || `Request failed (HTTP ${r.status})`);
       setSubmitting(false);
       return;
     }
     setSubmitting(false);
-    onConnectSuccess(body);
+    enterCodeStage(body);
   } catch (err) {
     setSubmitting(false);
-    showFormMsg(`Network error: ${err.message}`);
+    showFormMsg(`Network error: ${err.message}. Is the server up?`);
   }
+}
+
+function enterCodeStage({ code, handle, expires_at }) {
+  codeFlow.code = code;
+  codeFlow.handle = handle;
+  codeFlow.expiresAt = expires_at;
+  $("#code-box").textContent = code;
+  $("#code-handle").textContent = handle;
+  $("#prompt-text").textContent = buildClaudePrompt(code);
+  showStage("stage-code");
+  startCountdown();
+  startPolling();
+}
+
+function startCountdown() {
+  const target = new Date(codeFlow.expiresAt).getTime();
+  const update = () => {
+    const ms = target - Date.now();
+    const el = $("#code-countdown");
+    if (!el) return;
+    if (ms <= 0) {
+      el.textContent = "EXPIRED";
+      showFormMsg("This code expired. Generate a new one.", "err", "#code-msg");
+      stopPolling();
+      return;
+    }
+    const s = Math.floor(ms / 1000);
+    el.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  };
+  update();
+  codeFlow.countdownTimer = setInterval(update, 1000);
+}
+
+function startPolling() {
+  if (!API_BASE) return; // preview handles its own auto-claim
+  const tick = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/code/status?code=${encodeURIComponent(codeFlow.code)}`);
+      if (!r.ok) return;
+      const body = await r.json();
+      if (body.status === "claimed") {
+        stopPolling();
+        onConnectSuccess({ handle: body.handle, equity: body.equity });
+      } else if (body.status === "expired") {
+        stopPolling();
+        showFormMsg("This code expired. Generate a new one.", "err", "#code-msg");
+      }
+    } catch { /* ignore transient errors */ }
+  };
+  tick();
+  codeFlow.pollTimer = setInterval(tick, 2500);
 }
 
 function onConnectSuccess(body) {
@@ -560,11 +661,27 @@ function onConnectSuccess(body) {
   $("#success-title").textContent = `Welcome, ${body.handle}!`;
   if (body.equity != null) {
     $("#success-msg").textContent =
-      `Your starting equity is ${usd(body.equity)}. You'll appear on the leaderboard within a minute.`;
+      `Starting equity ${usd(body.equity)}. You'll appear on the leaderboard within a minute.`;
+  } else {
+    $("#success-msg").textContent =
+      `You're connected. Your snapshot will appear on the leaderboard within a minute.`;
   }
-  $("#connect-form").hidden = true;
-  $("#modal-success").hidden = false;
+  showStage("stage-success");
   setTimeout(load, 1500);
+}
+
+async function copyToClipboard(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<span class="copy-icon">✓</span> Copied';
+      btn.classList.add("copied");
+      setTimeout(() => { btn.innerHTML = orig; btn.classList.remove("copied"); }, 1400);
+    }
+  } catch {
+    if (btn) btn.textContent = "Copy failed";
+  }
 }
 
 function bindModal() {
@@ -572,6 +689,8 @@ function bindModal() {
   $("#cta-connect-top")?.addEventListener("click", openModal);
   $("#modal-close")?.addEventListener("click", closeModal);
   $("#modal-cancel")?.addEventListener("click", closeModal);
+  $("#code-cancel")?.addEventListener("click", closeModal);
+  $("#code-newhandle")?.addEventListener("click", () => { resetModal(); setTimeout(() => $("#f-handle")?.focus(), 50); });
   $("#success-done")?.addEventListener("click", () => {
     closeModal();
     document.querySelector(".board-card")?.scrollIntoView({ behavior: "smooth" });
@@ -582,7 +701,9 @@ function bindModal() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("#modal-backdrop").hidden) closeModal();
   });
-  $("#connect-form")?.addEventListener("submit", submitConnect);
+  $("#connect-form")?.addEventListener("submit", submitHandle);
+  $("#copy-code")?.addEventListener("click", (e) => copyToClipboard(codeFlow.code || "", e.currentTarget));
+  $("#copy-prompt")?.addEventListener("click", (e) => copyToClipboard($("#prompt-text")?.textContent || "", e.currentTarget));
 }
 
 document.addEventListener("DOMContentLoaded", () => {

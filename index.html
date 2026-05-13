@@ -124,53 +124,92 @@
     <div class="modal-backdrop" id="modal-backdrop" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
-        <div class="modal-head">
-          <div class="modal-eyebrow">JOIN THE COMPETITION</div>
-          <h2 id="modal-title">Connect your Alpaca paper account</h2>
-          <p class="modal-sub">
-            We&rsquo;ll pull your paper-trading equity and positions every market day.
-            Keys are stored encrypted on the server and only used to read your account.
-          </p>
+
+        <!-- STAGE 1: pick a handle -->
+        <div class="modal-stage" id="stage-handle">
+          <div class="modal-head">
+            <div class="modal-eyebrow">JOIN THE COMPETITION</div>
+            <h2 id="modal-title">Connect your Alpaca paper account</h2>
+            <p class="modal-sub">
+              You&rsquo;ll get a short code and a one-line prompt to paste into Claude
+              on your own machine. Claude reads your Alpaca paper keys from your
+              local environment and connects them to the leaderboard.
+              <strong>Your keys never get typed into this site.</strong>
+            </p>
+          </div>
+
+          <form id="connect-form" class="modal-form" novalidate>
+            <label class="field">
+              <span class="field-label">Display name <span class="req">*</span></span>
+              <input id="f-handle" name="handle" type="text" maxlength="32" required
+                     autocomplete="off" placeholder="e.g. Filip" />
+              <span class="field-hint">Shown on the leaderboard. 1&ndash;32 characters, letters/digits/space/_.-</span>
+            </label>
+
+            <div class="form-msg" id="form-msg" hidden></div>
+
+            <div class="modal-actions">
+              <button class="cta cta-ghost" id="modal-cancel" type="button">Cancel</button>
+              <button class="cta cta-primary" id="modal-submit" type="submit">
+                <span class="btn-label">Generate Code</span>
+                <span class="btn-spin" hidden></span>
+              </button>
+            </div>
+          </form>
         </div>
 
-        <form id="connect-form" class="modal-form" novalidate>
-          <label class="field">
-            <span class="field-label">Display name <span class="req">*</span></span>
-            <input id="f-handle" name="handle" type="text" maxlength="32" required
-                   autocomplete="off" placeholder="e.g. Filip" />
-            <span class="field-hint">Shown on the leaderboard. 1&ndash;32 characters.</span>
-          </label>
+        <!-- STAGE 2: code displayed, waiting for Claude to claim -->
+        <div class="modal-stage" id="stage-code" hidden>
+          <div class="modal-head">
+            <div class="modal-eyebrow">STEP 1 OF 2</div>
+            <h2>Your code</h2>
+            <p class="modal-sub">
+              Copy this code. We&rsquo;ll show you what to paste into Claude next.
+            </p>
+          </div>
 
-          <label class="field">
-            <span class="field-label">Alpaca paper API key <span class="req">*</span></span>
-            <input id="f-key" name="api_key" type="text" required spellcheck="false"
-                   autocomplete="off" placeholder="PK&hellip;" />
-          </label>
-
-          <label class="field">
-            <span class="field-label">Alpaca paper secret key <span class="req">*</span></span>
-            <input id="f-secret" name="secret_key" type="password" required spellcheck="false"
-                   autocomplete="off" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" />
-            <span class="field-hint">
-              Get yours at
-              <a href="https://app.alpaca.markets/paper/dashboard/overview" target="_blank" rel="noopener">
-                alpaca.markets &rarr; Paper Trading &rarr; View API Keys
-              </a>.
-            </span>
-          </label>
-
-          <div class="form-msg" id="form-msg" hidden></div>
-
-          <div class="modal-actions">
-            <button class="cta cta-ghost" id="modal-cancel" type="button">Cancel</button>
-            <button class="cta cta-primary" id="modal-submit" type="submit">
-              <span class="btn-label">Connect Account</span>
-              <span class="btn-spin" hidden></span>
+          <div class="code-display">
+            <div class="code-box" id="code-box">--- --- ---</div>
+            <button class="copy-btn" id="copy-code" type="button" title="Copy code">
+              <span class="copy-icon">&#9783;</span> Copy
             </button>
           </div>
-        </form>
+          <div class="code-meta">
+            <span>For handle: <strong id="code-handle">&mdash;</strong></span>
+            <span>Expires in <strong id="code-countdown">10:00</strong></span>
+          </div>
 
-        <div class="modal-success" id="modal-success" hidden>
+          <div class="modal-head" style="margin-top: 22px;">
+            <div class="modal-eyebrow">STEP 2 OF 2</div>
+            <h2>Paste this into Claude</h2>
+            <p class="modal-sub">
+              Open Claude on the same machine your Alpaca paper keys live on
+              (or anywhere Claude can run a shell command). Paste the block below.
+            </p>
+          </div>
+
+          <div class="prompt-block">
+            <pre id="prompt-text"></pre>
+            <button class="copy-btn copy-btn-inline" id="copy-prompt" type="button" title="Copy prompt">
+              <span class="copy-icon">&#9783;</span> Copy prompt
+            </button>
+          </div>
+
+          <div class="waiting" id="waiting">
+            <span class="waiting-dot"></span>
+            <span class="waiting-text">Waiting for Claude to connect&hellip;</span>
+          </div>
+
+          <div class="form-msg" id="code-msg" hidden></div>
+
+          <div class="modal-actions">
+            <button class="cta cta-ghost" id="code-cancel" type="button">Cancel</button>
+            <button class="cta cta-ghost" id="code-newhandle" type="button">Different handle</button>
+          </div>
+        </div>
+
+        <!-- STAGE 3: success -->
+        <div class="modal-stage modal-success" id="stage-success" hidden>
           <div class="check">&#10003;</div>
           <h3 id="success-title">You&rsquo;re in!</h3>
           <p id="success-msg">Your first snapshot is being processed. Watch the leaderboard.</p>
