@@ -16,115 +16,38 @@ const STARTING_CAPITAL = 100_000;
 const ME_HANDLE_KEY = "alpaca_me_handle";
 let myHandle = localStorage.getItem(ME_HANDLE_KEY) || null;
 
-const MOCK = {
+// Empty board — file:// preview shows the "no players yet" state.
+// Real data comes from the live API. We never fall back to fake users.
+const EMPTY_BOARD = {
   starting_capital: 100000,
   as_of: new Date().toISOString(),
-  leaderboard: [
-    {
-      handle: "Filip",
-      equity: 100161.0, cash: 48884.0, pnl: 161.0, roi_pct: 0.161,
-      day_pnl: 161.0, num_positions: 2,
-      last_update: new Date(Date.now() - 5_000).toISOString(),
-      positions: [
-        { sym: "LEG",  qty: 2587, mv: 24628.24, upnl: -310.44 },
-        { sym: "ELVN", qty: 630,  mv: 26649.0,  upnl: 472.5  }
-      ],
-      history: mockCurve(100, 100161, 0.005)
-    },
-    {
-      handle: "Daniel",
-      equity: 100920.0, cash: 12340.0, pnl: 920.0, roi_pct: 0.92,
-      day_pnl: 412.0, num_positions: 4,
-      last_update: new Date(Date.now() - 60_000).toISOString(),
-      positions: [
-        { sym: "NVDA", qty: 30, mv: 38400.0, upnl: 220.5 },
-        { sym: "AAPL", qty: 80, mv: 14920.0, upnl: 90.0 },
-        { sym: "MSFT", qty: 25, mv: 11250.0, upnl: -60.0 },
-        { sym: "TSLA", qty: 15, mv: 24010.0, upnl: 670.0 }
-      ],
-      history: mockCurve(100, 100920, 0.012)
-    },
-    {
-      handle: "Mike",
-      equity: 99540.0, cash: 95000.0, pnl: -460.0, roi_pct: -0.46,
-      day_pnl: -120.0, num_positions: 1,
-      last_update: new Date(Date.now() - 4 * 3600_000).toISOString(),
-      positions: [
-        { sym: "GME", qty: 200, mv: 4540.0, upnl: -460.0 }
-      ],
-      history: mockCurve(100, 99540, 0.006)
-    },
-    {
-      handle: "Ari",
-      equity: 102340.0, cash: 50100.0, pnl: 2340.0, roi_pct: 2.34,
-      day_pnl: 880.0, num_positions: 3,
-      last_update: new Date(Date.now() - 30_000).toISOString(),
-      positions: [
-        { sym: "META", qty: 50, mv: 28000.0, upnl: 1200.0 },
-        { sym: "AMD",  qty: 80, mv: 12640.0, upnl: 540.0 },
-        { sym: "PLTR", qty: 600, mv: 11600.0, upnl: 600.0 }
-      ],
-      history: mockCurve(100, 102340, 0.018)
-    },
-    {
-      handle: "Sara",
-      equity: null, cash: null, pnl: null, roi_pct: null,
-      day_pnl: null, num_positions: 0,
-      last_update: null,
-      positions: [],
-      history: []
-    },
-    {
-      handle: "Jamal",
-      equity: 98220.0, cash: 30000.0, pnl: -1780.0, roi_pct: -1.78,
-      day_pnl: -240.0, num_positions: 2,
-      last_update: new Date(Date.now() - 90_000).toISOString(),
-      positions: [
-        { sym: "COIN", qty: 100, mv: 22000.0, upnl: -1280.0 },
-        { sym: "MARA", qty: 1500, mv: 46220.0, upnl: -500.0 }
-      ],
-      history: mockCurve(100, 98220, 0.022)
-    }
-  ]
+  leaderboard: []
 };
-
-function mockCurve(n, end, vol) {
-  const out = [];
-  const start = STARTING_CAPITAL;
-  for (let i = 0; i < n; i++) {
-    const t = i / (n - 1);
-    const drift = start + (end - start) * t;
-    const wobble = drift * vol * (Math.sin(i * 0.7) + Math.sin(i * 0.21) * 0.5);
-    const ts = new Date(Date.now() - (n - i) * 24 * 3600_000).toISOString();
-    out.push({ ts, equity: Math.round((drift + wobble) * 100) / 100 });
-  }
-  return out;
-}
 
 /* ============================================================
    API
    ============================================================ */
 async function fetchLeaderboard() {
-  if (!API_BASE) return MOCK;
+  if (!API_BASE) return { ...EMPTY_BOARD, _preview: true };
   try {
     const r = await fetch(`${API_BASE}/api/leaderboard`, { cache: "no-store" });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.json();
   } catch (e) {
-    console.warn("leaderboard fetch failed, using mock", e);
-    return { ...MOCK, _mock: true };
+    console.warn("leaderboard fetch failed", e);
+    return { ...EMPTY_BOARD, _error: true };
   }
 }
 
 async function fetchHistory(handle) {
-  if (!API_BASE) return MOCK.leaderboard.find(p => p.handle === handle)?.history || [];
+  if (!API_BASE) return [];
   try {
     const r = await fetch(`${API_BASE}/api/user/${encodeURIComponent(handle)}/history`, { cache: "no-store" });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.json();
   } catch (e) {
-    console.warn(`history fetch failed for ${handle}, using mock`, e);
-    return MOCK.leaderboard.find(p => p.handle === handle)?.history || [];
+    console.warn(`history fetch failed for ${handle}`, e);
+    return [];
   }
 }
 
@@ -178,11 +101,14 @@ function setStatus(state) {
     label.classList.add("on");
     label.textContent = "LIVE";
     footer.textContent = "online";
-  } else if (state === "mock") {
+  } else if (state === "preview") {
+    label.textContent = "PREVIEW";
+    footer.textContent = "local preview";
+  } else if (state === "error") {
     dot.classList.add("err");
     label.classList.add("err");
-    label.textContent = "DEMO";
-    footer.textContent = "offline (showing mock data)";
+    label.textContent = "OFFLINE";
+    footer.textContent = "can't reach server";
   } else {
     label.textContent = "CONNECTING";
     footer.textContent = "connecting…";
@@ -466,7 +392,9 @@ async function load() {
   lastData.board = data.leaderboard || [];
   lastData.asOf = data.as_of;
   lastData.mock = !!data._mock;
-  setStatus(data._mock ? "mock" : "live");
+  if (data._preview) setStatus("preview");
+  else if (data._error) setStatus("error");
+  else setStatus("live");
   renderChampion(lastData.board);
   renderStats(lastData.board);
   renderBoard(lastData.board);
