@@ -96,7 +96,7 @@ const fmtHandle = (s) => {
 const $ = (sel) => document.querySelector(sel);
 let chartInstance = null;
 const expandedRows = new Set();
-const lastData = { board: [], asOf: null, mock: false };
+const lastData = { board: [], asOf: null, mock: false, spy: null };
 
 function setStatus(state) {
   const dot = $("#live-dot");
@@ -143,27 +143,36 @@ function renderChampion(board) {
   roiEl.classList.toggle("neg", leader.roi_pct < 0);
 }
 
-function renderStats(board) {
+function renderStats(board, spy) {
   const live = board.filter(p => p.equity != null);
   $("#stat-players").textContent = `${live.length} / ${board.length}`;
+
+  const spreadEl = $("#stat-spread");
+  spreadEl.classList.remove("pos", "neg");
 
   if (!live.length) {
     $("#stat-days").textContent = "—";
     $("#stat-top-roi").textContent = "—";
-    $("#stat-spread").textContent = "—";
+    spreadEl.textContent = "—";
     return;
   }
 
   const rois = live.map(p => p.roi_pct);
   const topRoi = Math.max(...rois);
-  const botRoi = Math.min(...rois);
   $("#stat-top-roi").textContent = pct(topRoi);
   $("#stat-top-roi").classList.toggle("pos", topRoi >= 0);
   $("#stat-top-roi").classList.toggle("neg", topRoi < 0);
-  $("#stat-spread").textContent = `${(topRoi - botRoi).toFixed(2)} pp`;
 
-  // Days live = max history length across live players (approximate)
-  // We don't have history in /api/leaderboard so fall back to "since earliest snapshot"
+  // #1 VS SPY: leader's ROI minus SPY's return since 5/12 close. Positive = alpha.
+  if (spy && typeof spy.return_pct === "number") {
+    const alpha = topRoi - spy.return_pct;
+    spreadEl.textContent = `${alpha >= 0 ? "+" : ""}${alpha.toFixed(2)} pp`;
+    spreadEl.classList.toggle("pos", alpha >= 0);
+    spreadEl.classList.toggle("neg", alpha < 0);
+  } else {
+    spreadEl.textContent = "—";
+  }
+
   const earliest = live
     .map(p => p.last_update ? new Date(p.last_update).getTime() : null)
     .filter(Boolean)
@@ -400,11 +409,12 @@ async function load() {
   lastData.board = data.leaderboard || [];
   lastData.asOf = data.as_of;
   lastData.mock = !!data._mock;
+  lastData.spy = data.spy || null;
   if (data._preview) setStatus("preview");
   else if (data._error) setStatus("error");
   else setStatus("live");
   renderChampion(lastData.board);
-  renderStats(lastData.board);
+  renderStats(lastData.board, lastData.spy);
   renderBoard(lastData.board);
   renderRefresh(lastData.asOf, lastData.mock);
 }

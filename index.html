@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-  <script src="app.js?v=9" defer></script>
+  <script src="app.js?v=10" defer></script>
 </head>
 <body>
   <div class="scanlines" aria-hidden="true"></div>
@@ -52,7 +52,7 @@
         <div class="stat-value" id="stat-top-roi">&mdash;</div>
       </div>
       <div class="stat">
-        <div class="stat-label">SPREAD</div>
+        <div class="stat-label">#1 VS SPY</div>
         <div class="stat-value" id="stat-spread">&mdash;</div>
       </div>
     </section>
@@ -105,6 +105,7 @@
         <li>Every market day after close, each player's machine posts a snapshot (equity, cash, positions) to this leaderboard.</li>
         <li>API keys never leave your machine. The leaderboard only ever sees the final numbers.</li>
         <li>Ranked by total ROI %. Click a row to see that player's positions and equity curve.</li>
+        <li>The <strong>#1 VS SPY</strong> stat at the top is the leader&rsquo;s edge over the S&amp;P 500 ETF (SPY) since the 5/12 close. Anyone can buy SPY &mdash; positive means our top trader is generating real alpha over a passive index hold; negative means SPY is the better bet.</li>
       </ol>
     </section>
 
