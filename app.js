@@ -145,7 +145,7 @@ function renderChampion(board) {
   }
   // board is already sorted descending by roi_pct upstream
   const leader = live[0];
-  nameEl.textContent = fmtDisplayName(leader);
+  nameEl.textContent = fmtHandle(leader.handle);
   roiEl.textContent = `${pct(leader.roi_pct)} · ${usd(leader.pnl, { sign: true })}`;
   roiEl.classList.toggle("pos", leader.roi_pct >= 0);
   roiEl.classList.toggle("neg", leader.roi_pct < 0);
