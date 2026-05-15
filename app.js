@@ -151,6 +151,18 @@ function renderChampion(board) {
   roiEl.classList.toggle("neg", leader.roi_pct < 0);
 }
 
+const NUM_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven",
+  "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"];
+
+function renderHeroCount(board) {
+  const el = document.getElementById("hero-count");
+  if (!el) return;
+  const n = board.length;
+  const word = (n >= 0 && n < NUM_WORDS.length) ? NUM_WORDS[n] : String(n);
+  el.textContent = `${word} ${n === 1 ? "friend" : "friends"}.`;
+}
+
 function renderStats(board, spy) {
   const live = board.filter(p => p.equity != null);
   $("#stat-players").textContent = `${live.length} / ${board.length}`;
@@ -421,6 +433,7 @@ async function load() {
   if (data._preview) setStatus("preview");
   else if (data._error) setStatus("error");
   else setStatus("live");
+  renderHeroCount(lastData.board);
   renderChampion(lastData.board);
   renderStats(lastData.board, lastData.spy);
   renderBoard(lastData.board);
