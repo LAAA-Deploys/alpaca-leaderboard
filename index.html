@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles.css?v=11" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-  <script src="app.js?v=10" defer></script>
+  <script src="app.js?v=11" defer></script>
 </head>
 <body>
   <div class="scanlines" aria-hidden="true"></div>
@@ -141,10 +141,16 @@
 
           <form id="connect-form" class="modal-form" novalidate>
             <label class="field">
-              <span class="field-label">Display name <span class="req">*</span></span>
+              <span class="field-label">First name <span class="req">*</span></span>
               <input id="f-handle" name="handle" type="text" maxlength="32" required
-                     autocomplete="off" placeholder="e.g. Filip" />
-              <span class="field-hint">Shown on the leaderboard. 1&ndash;32 characters, letters/digits/space/_.-</span>
+                     autocomplete="given-name" placeholder="e.g. Filip" />
+              <span class="field-hint">1&ndash;32 characters, letters/digits/space/_.-</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Last name <span class="req">*</span></span>
+              <input id="f-lastname" name="last_name" type="text" maxlength="32" required
+                     autocomplete="family-name" placeholder="e.g. Niculete" />
+              <span class="field-hint">Used on the leaderboard as &ldquo;First L.&rdquo;</span>
             </label>
 
             <div class="form-msg" id="form-msg" hidden></div>

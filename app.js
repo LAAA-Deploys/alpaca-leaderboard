@@ -89,6 +89,14 @@ const fmtHandle = (s) => {
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
 };
+// Leaderboard display: "First L." when last_name is set, else the bare handle.
+const fmtDisplayName = (p) => {
+  const first = fmtHandle(p.handle);
+  if (!p.last_name) return first;
+  const ln = String(p.last_name).trim();
+  if (!ln) return first;
+  return `${first} ${ln.charAt(0).toUpperCase()}.`;
+};
 
 /* ============================================================
    Render
@@ -137,7 +145,7 @@ function renderChampion(board) {
   }
   // board is already sorted descending by roi_pct upstream
   const leader = live[0];
-  nameEl.textContent = fmtHandle(leader.handle);
+  nameEl.textContent = fmtDisplayName(leader);
   roiEl.textContent = `${pct(leader.roi_pct)} · ${usd(leader.pnl, { sign: true })}`;
   roiEl.classList.toggle("pos", leader.roi_pct >= 0);
   roiEl.classList.toggle("neg", leader.roi_pct < 0);
@@ -203,7 +211,7 @@ function renderBoard(board) {
     if (noData) {
       tr.innerHTML = `
         <td class="col-rank-cell muted">—</td>
-        <td class="handle-cell">${escapeHtml(fmtHandle(p.handle))}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
+        <td class="handle-cell">${escapeHtml(fmtDisplayName(p))}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
         <td colspan="6" class="num muted">no snapshot yet</td>
         <td class="col-caret-cell"></td>
       `;
@@ -216,7 +224,7 @@ function renderBoard(board) {
 
     tr.innerHTML = `
       <td class="col-rank-cell ${rankCls}"><span class="rank-hash">#</span>${rank}</td>
-      <td class="handle-cell">${escapeHtml(fmtHandle(p.handle))}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
+      <td class="handle-cell">${escapeHtml(fmtDisplayName(p))}${isMe ? ` <span class="me-pill">YOU</span>` : ""}</td>
       <td class="num">${usd(p.equity)}</td>
       <td class="num ${roiCls}">${usd(p.pnl, { sign: true })}</td>
       <td class="num ${roiCls}">${pct(p.roi_pct)}</td>
@@ -507,12 +515,21 @@ Report back what the server returns. On success the JSON has "ok":true and my eq
 async function submitHandle(e) {
   e.preventDefault();
   const handle = $("#f-handle").value.trim();
+  const lastName = $("#f-lastname").value.trim();
   if (!handle || handle.length > 32) {
-    showFormMsg("Display name must be 1–32 characters.");
+    showFormMsg("First name must be 1–32 characters.");
     return;
   }
   if (!/^[A-Za-z0-9 _.\-]+$/.test(handle)) {
-    showFormMsg("Letters, digits, space, underscore, dot, dash only.");
+    showFormMsg("First name: letters, digits, space, underscore, dot, dash only.");
+    return;
+  }
+  if (!lastName || lastName.length > 32) {
+    showFormMsg("Last name must be 1–32 characters.");
+    return;
+  }
+  if (!/^[A-Za-z][A-Za-z '\-]*$/.test(lastName)) {
+    showFormMsg("Last name: letters, apostrophe, hyphen, space only.");
     return;
   }
 
@@ -525,7 +542,7 @@ async function submitHandle(e) {
     setSubmitting(false);
     const fakeCode = "K8M-J3P";
     const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
-    enterCodeStage({ code: fakeCode, handle, expires_at: expiresAt });
+    enterCodeStage({ code: fakeCode, handle, last_name: lastName, expires_at: expiresAt });
     setTimeout(() => onConnectSuccess({ handle, equity: 100000 }), 6000);
     return;
   }
@@ -534,7 +551,7 @@ async function submitHandle(e) {
     const r = await fetch(`${API_BASE}/api/code/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ handle }),
+      body: JSON.stringify({ handle, last_name: lastName }),
     });
     const body = await r.json().catch(() => ({}));
     if (!r.ok) {
